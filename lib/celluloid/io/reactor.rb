@@ -42,13 +42,13 @@ module Celluloid
         monitor = @selector.register(io, set)
         monitor.value = Task.current
         Task.suspend :iowait
+        monitor.close
       end
 
       # Run the reactor, waiting for events or wakeup signal
       def run_once(timeout = nil)
         @selector.select(timeout) do |monitor|
           task = monitor.value
-          monitor.close
 
           if task.running?
             task.resume
