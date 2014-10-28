@@ -42,7 +42,8 @@ module Celluloid
         monitor = @selector.register(io, set)
         monitor.value = Task.current
         Task.suspend :iowait
-        monitor.close
+      ensure
+        monitor.close unless Celluloid::Task::TerminatedError === $!
       end
 
       # Run the reactor, waiting for events or wakeup signal
