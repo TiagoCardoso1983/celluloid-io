@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Celluloid::IO::TCPSocket do
+RSpec.describe Celluloid::IO::TCPSocket do
   let(:payload) { 'ohai' }
 
   context "inside Celluloid::IO" do

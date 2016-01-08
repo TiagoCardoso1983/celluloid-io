@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Celluloid::IO::DNSResolver do
+RSpec.describe Celluloid::IO::DNSResolver do
   describe '#resolve' do
     it 'resolves hostnames' do
       resolver = Celluloid::IO::DNSResolver.new

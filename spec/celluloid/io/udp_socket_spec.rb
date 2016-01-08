@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Celluloid::IO::UDPSocket do
+RSpec.describe Celluloid::IO::UDPSocket do
   let(:payload) { 'ohai' }
   subject do
     Celluloid::IO::UDPSocket.new.tap do |sock|
