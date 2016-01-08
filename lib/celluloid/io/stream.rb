@@ -37,11 +37,15 @@ module Celluloid
         buffer ||= ''.force_encoding(Encoding::ASCII_8BIT)
 
         @read_latch.synchronize do
-          begin
-            read_nonblock(length, buffer)
-          rescue ::IO::WaitReadable
-            wait_readable
-            retry
+          if RUBY_VERSION < '2.1'
+            begin
+              read_nonblock(length, buffer)
+            rescue ::IO::WaitReadable
+              wait_readable
+              retry
+            end
+          else
+            loop while read_nonblock(length, buffer, exception: false) == :wait_readable
           end
         end
 
@@ -57,13 +61,21 @@ module Celluloid
 
         @write_latch.synchronize do
           while total_written < length
-            begin
-              written = write_nonblock(remaining)
-            rescue ::IO::WaitWritable
-              wait_writable
-              retry
-            rescue EOFError
-              return total_written
+            if RUBY_VERSION < '2.1'
+              begin
+                written = write_nonblock(remaining)
+              rescue ::IO::WaitWritable
+                wait_writable
+                retry
+              rescue EOFError
+                return total_written
+              end
+            else
+              begin
+                loop while (written = write_nonblock(remaining, exception: false)) == :wait_writable
+              rescue EOFError
+                return total_written
+              end
             end
 
             total_written += written
