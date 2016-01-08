@@ -38,16 +38,8 @@ module Celluloid
         buffer ||= ''.force_encoding(Encoding::ASCII_8BIT)
 
         @read_latch.synchronize do
-          if RUBY_VERSION < '2.1'
-            begin
-              read_nonblock(length, buffer)
-            rescue ::IO::WaitReadable
-              wait_readable
-              retry
-            end
-          else
-            loop while read_nonblock(length, buffer, exception: false) == :wait_readable
-          end
+          op = perform_io { read_nonblock(length, buffer) }
+          raise EOFError if op == :eof
         end
 
         buffer
@@ -62,29 +54,8 @@ module Celluloid
 
         @write_latch.synchronize do
           while total_written < length
-            if RUBY_VERSION < '2.1'
-              begin
-                written = write_nonblock(remaining)
-              rescue ::IO::WaitWritable
-                wait_writable
-                retry
-              rescue EOFError
-                return total_written
-              rescue Errno::EAGAIN
-                wait_writable
-                retry
-              end
-            else
-              begin
-                loop while (written = write_nonblock(remaining, exception: false)) == :wait_writable
-              rescue EOFError
-                return total_written
-              # is this really needed?????
-              rescue Errno::EAGAIN
-                wait_writable
-                retry
-              end
-            end
+            written = perform_io { write_nonblock(remaining) }
+            return total_written if written == :eof
 
             total_written += written
 
@@ -332,6 +303,30 @@ module Celluloid
       #######
       private
       #######
+
+      def perform_io
+        loop do
+          begin
+            result = yield
+
+            case result
+            when :wait_readable then wait_readable
+            when :wait_writable then wait_writable
+            when NilClass       then return :eof
+            else                return result
+            end
+          rescue ::IO::WaitReadable
+            wait_readable
+            retry 
+          rescue ::IO::WaitWritable,
+                 Errno::EAGAIN
+            wait_writable
+            retry
+          end
+        end
+      rescue EOFError
+        :eof
+      end
 
       # Fills the buffer from the underlying stream
       def fill_rbuff
