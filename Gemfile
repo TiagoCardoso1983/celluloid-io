@@ -1,5 +1,3 @@
-source 'https://rubygems.org'
-gemspec
+require File.expand_path("../culture/sync", __FILE__)
 
-gem 'coveralls', require: false
-gem 'celluloid', github: 'celluloid/celluloid', branch: 'master'
+Celluloid::Sync::Gemfile[self]

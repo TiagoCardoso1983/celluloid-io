@@ -1,11 +1,13 @@
-require 'resolv'
+require "ipaddr"
+require "resolv"
 
 module Celluloid
   module IO
     # Asynchronous DNS resolver using Celluloid::IO::UDPSocket
     class DNSResolver
-      RESOLV_CONF = '/etc/resolv.conf'
-      DNS_PORT    = 53
+      # Maximum UDP packet we'll accept
+      MAX_PACKET_SIZE = 512
+      DNS_PORT        = 53
 
       @mutex = Mutex.new
       @identifier = 1
@@ -14,32 +16,33 @@ module Celluloid
         @mutex.synchronize { @identifier = (@identifier + 1) & 0xFFFF }
       end
 
-      def self.nameservers(config = RESOLV_CONF)
-        File.read(config).scan(/^\s*nameserver\s+([0-9.:]+)/).flatten
+      def self.nameservers
+        Resolv::DNS::Config.default_config_hash[:nameserver]
       end
 
       def initialize
-        @nameservers = self.class.nameservers
+        # early return for edge case when there are no nameservers configured
+        # but we still want to be able to static lookups using #resolve_hostname
+        @nameservers = self.class.nameservers or return
 
-        # TODO: fall back on other nameservers if the first one is unavailable
-        @server = @nameservers.first
+        @server = IPAddr.new(@nameservers.sample)
 
         # The non-blocking secret sauce is here, as this is actually a
         # Celluloid::IO::UDPSocket
-        @socket = UDPSocket.new
+        @socket = UDPSocket.new(@server.family)
       end
 
       def resolve(hostname)
         if host = resolve_hostname(hostname)
           unless ip_address = resolve_host(host)
-            raise Resolv::ResolvError, "invalid entry in hosts file: #{host}"
+            fail Resolv::ResolvError, "invalid entry in hosts file: #{host}"
           end
           return ip_address
         end
 
         query = build_query(hostname)
-        @socket.send query.encode, 0, @server, DNS_PORT
-        data, _ = @socket.recvfrom(512)
+        @socket.send query.encode, 0, @server.to_s, DNS_PORT
+        data, _ = @socket.recvfrom(MAX_PACKET_SIZE)
         response = Resolv::DNS::Message.decode(data)
 
         addrs = []
@@ -58,7 +61,8 @@ module Celluloid
         # Resolv::Hosts#getaddresses pushes onto a stack
         # so since we want the first occurance, simply
         # pop off the stack.
-        resolv.getaddresses(hostname).pop rescue nil
+        resolv.getaddresses(hostname).pop
+      rescue
       end
 
       def resolv
@@ -74,14 +78,19 @@ module Celluloid
       end
 
       def resolve_host(host)
-        resolve_ip(Resolv::IPv4, host) || resolve_ip(Resolv::IPv6, host)
+        resolve_ip(Resolv::IPv4, host) || get_address(host) || resolve_ip(Resolv::IPv6, host)
       end
 
       def resolve_ip(klass, host)
-        begin
-          klass.create(host)
-        rescue ArgumentError
-        end
+        klass.create(host)
+      rescue ArgumentError
+      end
+
+      private
+
+      def get_address(host)
+        Resolv::Hosts.new(host).getaddress
+      rescue
       end
     end
   end

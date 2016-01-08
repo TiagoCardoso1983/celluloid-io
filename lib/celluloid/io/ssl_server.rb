@@ -1,4 +1,4 @@
-require 'socket'
+require "socket"
 
 module Celluloid
   module IO
@@ -11,10 +11,7 @@ module Celluloid
       attr_reader :tcp_server
 
       def initialize(server, ctx)
-        if server.is_a?(::TCPServer)
-          server = Celluloid::IO::TCPServer.from_ruby_server(server)
-        end
-        @tcp_server = server
+        @tcp_server = Socket.try_convert(server)
         @ctx = ctx
         @start_immediately = true
       end
@@ -33,4 +30,3 @@ module Celluloid
     end
   end
 end
-

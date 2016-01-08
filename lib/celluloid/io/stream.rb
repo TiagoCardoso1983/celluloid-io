@@ -8,7 +8,7 @@
 module Celluloid
   module IO
     # Base class of all streams in Celluloid::IO
-    class Stream
+    class Stream < Socket
       include Enumerable
 
       # The "sync mode" of the stream
@@ -16,7 +16,8 @@ module Celluloid
       # See IO#sync for full details.
       attr_accessor :sync
 
-      def initialize
+      def initialize(socket)
+        super
         @eof  = false
         @sync = true
         @read_buffer = ''.force_encoding(Encoding::ASCII_8BIT)
@@ -69,12 +70,19 @@ module Celluloid
                 retry
               rescue EOFError
                 return total_written
+              rescue Errno::EAGAIN
+                wait_writable
+                retry
               end
             else
               begin
                 loop while (written = write_nonblock(remaining, exception: false)) == :wait_writable
               rescue EOFError
                 return total_written
+              # is this really needed?????
+              rescue Errno::EAGAIN
+                wait_writable
+                retry
               end
             end
 
@@ -151,7 +159,7 @@ module Celluloid
         ret
       end
 
-      # Reads the next "line+ from the stream.  Lines are separated by +eol+.  If
+      # Reads the next line from the stream.  Lines are separated by +eol+.  If
       # +limit+ is provided the result will not be longer than the given number of
       # bytes.
       #
@@ -318,7 +326,7 @@ module Celluloid
       # Closes the stream and flushes any unwritten data.
       def close
         flush rescue nil
-        sysclose
+        super
       end
 
       #######
