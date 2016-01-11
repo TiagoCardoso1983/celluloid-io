@@ -304,30 +304,6 @@ module Celluloid
       private
       #######
 
-      def perform_io
-        loop do
-          begin
-            result = yield
-
-            case result
-            when :wait_readable then wait_readable
-            when :wait_writable then wait_writable
-            when NilClass       then return :eof
-            else                return result
-            end
-          rescue ::IO::WaitReadable
-            wait_readable
-            retry 
-          rescue ::IO::WaitWritable,
-                 Errno::EAGAIN
-            wait_writable
-            retry
-          end
-        end
-      rescue EOFError
-        :eof
-      end
-
       # Fills the buffer from the underlying stream
       def fill_rbuff
         begin

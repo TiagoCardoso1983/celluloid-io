@@ -70,6 +70,32 @@ module Celluloid
         end
       end
 
+      private 
+
+      def perform_io
+        loop do
+          begin
+            result = yield
+
+            case result
+            when :wait_readable then wait_readable
+            when :wait_writable then wait_writable
+            when NilClass       then return :eof
+            else                return result
+            end
+          rescue ::IO::WaitReadable
+            wait_readable
+            retry 
+          rescue ::IO::WaitWritable,
+                 Errno::EAGAIN
+            wait_writable
+            retry
+          end
+        end
+      rescue EOFError
+        :eof
+      end
+
       class << self
         extend Forwardable
         def_delegators '::Socket', *(::Socket.methods - self.methods - [:try_convert])
