@@ -31,18 +31,15 @@ module Celluloid
       # MSG_ options. The first element of the results, mesg, is the data
       # received. The second element, sender_addrinfo, contains
       # protocol-specific address information of the sender.
-      def recvfrom(maxlen, flags = 0)
-        begin
+      def recvfrom(*args)
+        perform_io do
           socket = to_io
           if socket.respond_to? :recvfrom_nonblock
-            socket.recvfrom_nonblock(maxlen, flags)
+            socket.recvfrom_nonblock(*args)
           else
             # FIXME: hax for JRuby
-            socket.recvfrom(maxlen, flags)
+            socket.recvfrom(*args)
           end
-        rescue ::IO::WaitReadable
-          wait_readable
-          retry
         end
       end
 
