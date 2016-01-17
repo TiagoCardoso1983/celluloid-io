@@ -38,7 +38,12 @@ module Celluloid
         buffer ||= ''.force_encoding(Encoding::ASCII_8BIT)
 
         @read_latch.synchronize do
-          op = perform_io { read_nonblock(length, buffer) }
+          op = perform_io do
+            # TODO: remove after ending ruby 2.0.0 support
+            RUBY_VERSION < "2.1" ?
+            read_nonblock(length, buffer) :
+            read_nonblock(length, buffer, exception: false) 
+          end
           raise EOFError if op == :eof
         end
 
@@ -54,7 +59,12 @@ module Celluloid
 
         @write_latch.synchronize do
           while total_written < length
-            written = perform_io { write_nonblock(remaining) }
+            written = perform_io do
+              # TODO: remove after ending ruby 2.0.0 support
+              RUBY_VERSION < "2.1" ?
+              write_nonblock(remaining) :
+              write_nonblock(remaining, exception: false)
+            end 
             return total_written if written == :eof
 
             total_written += written
