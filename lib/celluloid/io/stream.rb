@@ -39,10 +39,7 @@ module Celluloid
 
         @read_latch.synchronize do
           op = perform_io do
-            # TODO: remove after ending ruby 2.0.0 support
-            RUBY_VERSION < "2.1" ?
-            read_nonblock(length, buffer) :
-            read_nonblock(length, buffer, exception: false) 
+            read_nonblock(length, buffer) 
           end
           raise EOFError if op == :eof
         end
@@ -60,10 +57,7 @@ module Celluloid
         @write_latch.synchronize do
           while total_written < length
             written = perform_io do
-              # TODO: remove after ending ruby 2.0.0 support
-              RUBY_VERSION < "2.1" ?
-              write_nonblock(remaining) :
-              write_nonblock(remaining, exception: false)
+              write_nonblock(remaining) 
             end 
             return total_written if written == :eof
 
@@ -76,6 +70,20 @@ module Celluloid
 
         total_written
       end
+
+      # TODO: remove after ending ruby 2.0.0 support
+      if RUBY_VERSION >= "2.1" 
+        def read_nonblock(*args, **options)
+          options[:exception] = false
+          super(*args, **options)
+        end
+
+        def write_nonblock(*args, **options)
+          options[:exception] = false
+          super(*args, **options)
+        end
+      end
+
 
       # Reads +size+ bytes from the stream.  If +buf+ is provided it must
       # reference a string which will receive the data.

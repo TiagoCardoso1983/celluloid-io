@@ -188,7 +188,6 @@ RSpec.describe Celluloid::IO::TCPSocket, library: :IO do
         with_connected_sockets(example_port) do |subject, peer|
           subject.sync = false
           within_io_actor { subject << payload }
-          expect{ peer.read_nonblock payload.length }.to raise_exception ::IO::WaitReadable
           within_io_actor { subject.close }
           expect(peer.read).to eq payload
         end
