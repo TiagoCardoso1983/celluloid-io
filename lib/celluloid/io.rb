@@ -1,5 +1,6 @@
 require "celluloid/io/version"
 
+require "io/wait"
 require "celluloid"
 require "celluloid/io/dns_resolver"
 require "celluloid/io/mailbox"
@@ -47,25 +48,42 @@ module Celluloid
       end
     end
 
-    def wait_readable(io)
+    def wait_readable(io, timeout=nil)
       io = io.to_io
       if IO.evented?
         mailbox = Thread.current[:celluloid_mailbox]
-        mailbox.reactor.wait_readable(io)
+        mailbox.reactor.wait_readable(io, timeout=nil)
       else
-        Kernel.select([io])
+        # hack because SSLSocket does not have the methods defined
+        if io.respond_to?(:wait_readable) && 
+           # TCP* and UNIXServer always throws EINVAL exception in Linux when using #wait_readable, 
+           # upstream to ruby!
+           !(io.is_a?(::TCPServer) || io.is_a?(::UNIXServer)) 
+          io.wait_readable(timeout)
+        else
+          Kernel.select([io], nil, nil, timeout)
+        end
       end
       nil
     end
     module_function :wait_readable
 
-    def wait_writable(io)
+    def wait_writable(io, timeout=nil)
       io = io.to_io
       if IO.evented?
         mailbox = Thread.current[:celluloid_mailbox]
-        mailbox.reactor.wait_writable(io)
+        mailbox.reactor.wait_writable(io, timeout=nil)
       else
-        Kernel.select([], [io])
+        # hack because SSLSocket does not have the methods defined
+        if io.respond_to?(:wait_writable) &&
+           # TCP* and UNIXServer always throws EINVAL exception in Linux when using #wait_readable, 
+           # upstream to ruby!
+           !(io.is_a?(::TCPServer) || io.is_a?(::UNIXServer)) 
+        
+          io.wait_writable(timeout)
+        else
+          Kernel.select([], [io], nil, timeout)
+        end
       end
       nil
     end

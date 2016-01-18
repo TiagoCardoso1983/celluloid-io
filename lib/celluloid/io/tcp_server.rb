@@ -33,12 +33,12 @@ module Celluloid
 
       # @return [TCPSocket]
       def accept
-        Celluloid::IO.wait_readable(to_io)
         accept_nonblock
       end
 
       # @return [TCPSocket]
       def accept_nonblock
+        Celluloid::IO.wait_readable(to_io)
         Celluloid::IO::TCPSocket.new(to_io.accept_nonblock)
       end
 

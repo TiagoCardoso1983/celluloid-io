@@ -17,17 +17,17 @@ module Celluloid
       end
 
       # Wait for the given IO object to become readable
-      def wait_readable(io)
-        wait io, :r
+      def wait_readable(io, timeout=nil)
+        wait io, :r, timeout
       end
 
       # Wait for the given IO object to become writable
-      def wait_writable(io)
-        wait io, :w
+      def wait_writable(io, timeout=nil)
+        wait io, :w, timeout
       end
 
       # Wait for the given IO operation to complete
-      def wait(io, set)
+      def wait(io, set, timeout=nil)
         # zomg ugly type conversion :(
         unless io.is_a?(::IO) || io.is_a?(OpenSSL::SSL::SSLSocket)
           if io.respond_to? :to_io
@@ -43,7 +43,14 @@ module Celluloid
         monitor.value = Task.current
 
         begin
-          Task.suspend :iowait
+          # this condition is actually superflous; Timeout.timeout method signature is not respected
+          # by Celluloid:Actor#timeout; Timeout.timeout has arity 2 and can receive nil; the first one
+          # is already addressed in a PR in github
+          if timeout 
+            Thread.current[:celluloid_actor].timeout(timeout) { Task.suspend :iowait }
+          else
+            Task.suspend :iowait
+          end
         ensure
           # In all cases we want to ensure that the monitor is closed once we
           # have woken up. However, in some cases, the monitor is already

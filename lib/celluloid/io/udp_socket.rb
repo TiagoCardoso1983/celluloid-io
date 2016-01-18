@@ -24,9 +24,6 @@ module Celluloid
         end
       end
 
-      # Wait until the socket is readable
-      def wait_readable; Celluloid::IO.wait_readable(self); end
-
       # Receives up to maxlen bytes from socket. flags is zero or more of the
       # MSG_ options. The first element of the results, mesg, is the data
       # received. The second element, sender_addrinfo, contains

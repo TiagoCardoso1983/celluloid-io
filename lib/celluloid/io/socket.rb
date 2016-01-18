@@ -70,6 +70,18 @@ module Celluloid
         end
       end
 
+      # io/wait API, it belongs here as it is extended on all IOs
+
+      # Wait until the current object is readable
+      def wait_readable(*args)
+        Celluloid::IO.wait_readable(self, *args)
+      end
+
+      # Wait until the current object is writable
+      def wait_writable(*args)
+        Celluloid::IO.wait_writable(self, *args)
+      end
+
       class << self
         extend Forwardable
         def_delegators '::Socket', *(::Socket.methods - self.methods - [:try_convert])

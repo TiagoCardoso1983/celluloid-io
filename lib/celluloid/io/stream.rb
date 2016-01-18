@@ -27,12 +27,6 @@ module Celluloid
         @write_latch = Latch.new
       end
 
-      # Wait until the current object is readable
-      def wait_readable; Celluloid::IO.wait_readable(self); end
-
-      # Wait until the current object is writable
-      def wait_writable; Celluloid::IO.wait_writable(self); end
-
       # System read via the nonblocking subsystem
       def sysread(length = nil, buffer = nil)
         buffer ||= ''.force_encoding(Encoding::ASCII_8BIT)
