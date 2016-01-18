@@ -42,7 +42,10 @@ module Celluloid
 
         query = build_query(hostname)
         @socket.send query.encode, 0, @server.to_s, DNS_PORT
-        data, _ = @socket.recvfrom(MAX_PACKET_SIZE)
+        data, _ = RUBY_VERSION >= "2.3" ?
+                  # Documenting the cryptic second parameter (flags): http://stackoverflow.com/questions/1527895/where-are-msg-options-defined-for-ruby-sockets
+                  @socket.recvfrom(MAX_PACKET_SIZE, 0, nil, exception: false) :
+                  @socket.recvfrom(MAX_PACKET_SIZE)
         response = Resolv::DNS::Message.decode(data)
 
         addrs = []
