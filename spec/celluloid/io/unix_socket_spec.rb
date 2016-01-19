@@ -200,4 +200,48 @@ RSpec.describe Celluloid::IO::UNIXSocket, library: :IO do
     end
   end
 
+  context "io/wait API" do
+    describe "#wait_readable/wait_writable" do
+      it "can timeout on descriptors wait" do
+        class WaiterActor
+          include Celluloid::IO
+          def send_later(socket)
+            peer = socket.accept
+            after(2) { peer.write "1" }
+            peer
+          end
+        end
+        with_unix_server do |subject|
+          thread = Thread.new { Celluloid::IO::UNIXSocket.new(example_unix_sock) }
+          actor = WaiterActor.new
+          begin
+            within_io_actor do
+              # wait_writable
+              # if wait_writable(t) timeouts, it returns nil
+              # ATTENTION: UNIX Servers seem to be writable all the time. How to test wait_writable(timeout)?
+              # expect(subject.wait_writable(0.2)).to be_nil
+              peer = actor.send_later(subject)
+              client = thread.value
+              # wait_writable() is successfully, it returns the socket
+              expect(client.wait_writable).to be(client)
+         
+              # wait_readable
+              client.write payload
+              expect(peer.read(payload.size)).to eq payload # confirm the client read
+              # waiter actor sends info after 2 seconds
+              # there is the assumption here that after 0.2,
+              # there is not yet anything to read
+              # as all timer specs, some variations might occur, but 0.2 to 2 must be reasonable
+              expect(client.wait_readable(0.2)).to be_nil
+              expect(client.wait_readable).to be(client)
+              expect(client.read_nonblock(2)).to eq "1"
+            end
+          ensure
+            actor.terminate if actor.alive?
+          end
+        end
+      end      
+    
+    end
+  end
 end
