@@ -52,7 +52,7 @@ module Celluloid
       io = io.to_io
       if IO.evented?
         mailbox = Thread.current[:celluloid_mailbox]
-        mailbox.reactor.wait_readable(io, timeout=nil)
+        mailbox.reactor.wait_readable(io, timeout)
       else
         # hack because SSLSocket does not have the methods defined
         if io.respond_to?(:wait_readable) && 
@@ -72,14 +72,13 @@ module Celluloid
       io = io.to_io
       if IO.evented?
         mailbox = Thread.current[:celluloid_mailbox]
-        mailbox.reactor.wait_writable(io, timeout=nil)
+        mailbox.reactor.wait_writable(io, timeout)
       else
         # hack because SSLSocket does not have the methods defined
         if io.respond_to?(:wait_writable) &&
            # TCP* and UNIXServer always throws EINVAL exception in Linux when using #wait_readable, 
            # upstream to ruby!
            !(io.is_a?(::TCPServer) || io.is_a?(::UNIXServer)) 
-        
           io.wait_writable(timeout)
         else
           Kernel.select([], [io], nil, timeout)
