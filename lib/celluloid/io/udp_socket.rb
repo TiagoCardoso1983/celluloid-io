@@ -34,7 +34,7 @@ module Celluloid
       if RUBY_VERSION >= "2.3"
         def recvfrom(*args, **options)
           socket = to_io
-          options[:exception] = false
+          options[:exception] = false unless options.has_key?(:exception)
           perform_io { socket.recvfrom_nonblock(*args, **options) }
         end
       else

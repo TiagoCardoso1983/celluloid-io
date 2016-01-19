@@ -74,12 +74,12 @@ module Celluloid
       # TODO: remove after ending ruby 2.0.0 support
       if RUBY_VERSION >= "2.1" 
         def read_nonblock(*args, **options)
-          options[:exception] = false
+          options[:exception] = false unless options.has_key?(:exception)
           super(*args, **options)
         end
 
         def write_nonblock(*args, **options)
-          options[:exception] = false
+          options[:exception] = false unless options.has_key?(:exception)
           super(*args, **options)
         end
       end
