@@ -55,6 +55,16 @@ def with_unix_server
   end
 end
 
+def with_ssl_server(port, raw_server = nil)
+  raw_server ||= Celluloid::IO::TCPServer.new(example_addr, port)
+  server = Celluloid::IO::SSLServer.new(raw_server, server_context)
+  begin
+    yield server
+  ensure
+    server.close
+  end
+end
+
 def with_connected_sockets(port)
   with_tcp_server(port) do |server|
     client = Celluloid::IO::TCPSocket.new(example_addr, port)

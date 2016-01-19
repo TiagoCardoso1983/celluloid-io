@@ -78,14 +78,4 @@ RSpec.describe Celluloid::IO::SSLServer, library: :IO do
       end
     end
   end
-
-  def with_ssl_server(port, raw_server = nil)
-    raw_server ||= Celluloid::IO::TCPServer.new(example_addr, port)
-    server = Celluloid::IO::SSLServer.new(raw_server, server_context)
-    begin
-      yield server
-    ensure
-      server.close
-    end
-  end
 end
