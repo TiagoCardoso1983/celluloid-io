@@ -73,13 +73,19 @@ module Celluloid
       # io/wait API, it belongs here as it is extended on all IOs
 
       # Wait until the current object is readable
-      def wait_readable(*args)
-        Celluloid::IO.wait_readable(self, *args)
+      def wait_readable(timeout=nil)
+        Celluloid::IO.wait_readable(self, timeout)
+        self
+      rescue Celluloid::TaskTimeout => e
+        raise e unless timeout
       end
 
       # Wait until the current object is writable
-      def wait_writable(*args)
-        Celluloid::IO.wait_writable(self, *args)
+      def wait_writable(timeout=nil)
+        Celluloid::IO.wait_writable(self, timeout)
+        self
+      rescue Celluloid::TaskTimeout => e
+        raise e unless timeout
       end
 
       class << self

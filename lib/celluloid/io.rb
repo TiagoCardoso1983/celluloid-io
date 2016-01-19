@@ -52,11 +52,7 @@ module Celluloid
       io = io.to_io
       if IO.evented?
         mailbox = Thread.current[:celluloid_mailbox]
-        begin
-          mailbox.reactor.wait_readable(io, timeout) && io
-        rescue Celluloid::TaskTimeout => e
-          raise e unless timeout
-        end
+        mailbox.reactor.wait_readable(io, timeout)
       else
         # hack because SSLSocket does not have the methods defined
         if io.respond_to?(:wait_readable) && 
@@ -76,11 +72,7 @@ module Celluloid
       io = io.to_io
       if IO.evented?
         mailbox = Thread.current[:celluloid_mailbox]
-        begin
-          mailbox.reactor.wait_writable(io, timeout) && io
-        rescue TaskTimeout => e
-          raise e unless timeout
-        end
+        mailbox.reactor.wait_writable(io, timeout)
       else
         # hack because SSLSocket does not have the methods defined
         if io.respond_to?(:wait_writable) &&
