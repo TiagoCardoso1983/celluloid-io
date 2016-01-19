@@ -251,7 +251,7 @@ RSpec.describe Celluloid::IO::TCPSocket, library: :IO do
             end
           end
           with_tcp_server(example_port) do |subject|
-            thread = Thread.new { TCPSocket.new(example_addr, example_port) }
+            thread = Thread.new { Celluloid::IO::TCPSocket.new(example_addr, example_port) }
             actor = WaiterActor.new
             begin
               within_io_actor do
