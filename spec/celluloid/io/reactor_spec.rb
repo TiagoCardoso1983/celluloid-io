@@ -17,7 +17,7 @@ RSpec.describe Celluloid::IO::Reactor, library: :IO do
     # Main server body:
     within_io_actor do
       begin
-        timeout(2) do
+        Timeout.timeout(2) do
           loop do
             socket.readpartial(2046)
           end
