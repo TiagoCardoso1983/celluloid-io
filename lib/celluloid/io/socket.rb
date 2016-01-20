@@ -80,6 +80,7 @@ module Celluloid
       rescue Celluloid::TaskTimeout => e
         raise e unless timeout
       end
+      alias_method :wait, :wait_readable
 
       # Wait until the current object is writable
       def wait_writable(timeout=nil)
