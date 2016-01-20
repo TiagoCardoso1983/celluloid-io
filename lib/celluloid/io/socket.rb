@@ -72,6 +72,7 @@ module Celluloid
 
       # io/wait API, it belongs here as it is extended on all IOs
 
+      def_delegators :@socket, :ready?, :nread
       # Wait until the current object is readable
       def wait_readable(timeout=nil)
         Celluloid::IO.wait_readable(self, timeout)
