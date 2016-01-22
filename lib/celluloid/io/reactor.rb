@@ -47,7 +47,7 @@ module Celluloid
           # by Celluloid:Actor#timeout; Timeout.timeout has arity 2 and can receive nil; the first one
           # is already addressed in a PR in github
           if timeout 
-            Thread.current[:celluloid_actor].timeout(timeout) { Task.suspend :iowait }
+            Thread.current[:celluloid_actor].send(:timeout, timeout) { Task.suspend :iowait }
           else
             Task.suspend :iowait
           end
